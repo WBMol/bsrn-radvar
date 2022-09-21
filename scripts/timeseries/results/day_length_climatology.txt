@@ -1,0 +1,3 @@
+all months 	 Mean duration: 39133 s, mean u200: 7.93 m/s, mean size: 296.25 km
+summer (5-8)	 Mean duration: 51618 s, mean u200: 6.62 m/s, mean size: 341.59 km
+winter (11-02)	 Mean duration: 25890 s, mean u200: 9.57 m/s, mean size: 246.54 km
