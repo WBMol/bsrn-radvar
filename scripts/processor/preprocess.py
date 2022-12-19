@@ -172,18 +172,19 @@ def add_derived_variables(dt, res):
 
 
 @utils.timeit
-def add_clear_sky_ghi(time_start, time_stop, res):
+def add_clear_sky_ghi(time_start, time_stop, res, v='3.5'):
     """
     add the clear sky global horizontal irradiance from the CAMS McClear product
 
     :param time_start: start of the datetime range to process
     :param time_stop: end (not inclusive) of the datetime range to process
     :param str res: which dataset resolution to add to (1min or 1sec)
+    :param str v: version of cams mcclear to use, set to the latest by default
     :return:
     """
     # load the mcclear dataset
     mc_dir = os.path.join(settings.fdir_mcc, 'Cabauw')
-    mc_fpath = os.path.join(mc_dir, 'mcclear_20040101-20220101.nc')
+    mc_fpath = os.path.join(mc_dir, 'mcclear_20040101-20220101_v%s.nc' % v)
     mcclear = xarray.open_dataset(mc_fpath).squeeze().drop_vars(['altitude', 'latitude', 'longitude'])
     var_attrs = settings.mcclear_vars
     mc_vars = ['clear_sky_ghi', 'clear_sky_dhi']
@@ -241,18 +242,19 @@ def add_clear_sky_ghi(time_start, time_stop, res):
 
 
 @utils.timeit
-def add_mcclear_atmos_info(time_start, time_stop, res):
+def add_mcclear_atmos_info(time_start, time_stop, res, v='3.5'):
     """
     add the total AOD from the CAMS McClear product
 
     :param time_start: start of the datetime range to process
     :param time_stop: end (not inclusive) of the datetime range to process
     :param str res: which dataset resolution to add to (1min or 1sec)
+    :param str v: the version to use, set to the latest by default
     :return:
     """
     # load the mcclear aod dataset
     mccai_fdir = os.path.join(settings.fdir_mcc, 'Cabauw')
-    mccai_fname = 'mcclear_ai_2011-2022.nc'
+    mccai_fname = 'mcclear_ai_2004-2022_v%s.nc' % v
     mccai_fpath = os.path.join(mccai_fdir, mccai_fname)
     mccai = xarray.open_dataset(mccai_fpath).squeeze()
     var_attrs = settings.mcclear_vars

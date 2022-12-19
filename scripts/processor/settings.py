@@ -1,7 +1,7 @@
 import os
 import general.settings as gsettings
 
-VERSION = '0.9'
+VERSION = '1.0'
 debug = True
 solar_elevation_setting = 'accurate'  # 'fast', 'accurate' or 'max_accuracy'
 fastdir = True  # alternative tmp processing dir, usually ssd vs. hdd choice for speed
