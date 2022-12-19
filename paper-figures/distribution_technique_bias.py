@@ -5,7 +5,6 @@ import os
 
 from general import settings as gsettings
 from general import utils as gutils
-from scripts.processor import utils as putils
 import settings
 
 plt.style.use(gsettings.fpath_mplstyle)
@@ -37,13 +36,11 @@ def plot_slope(x0, x1, slope, label, dashes, fac, axes):
         ax.loglog(x, y * fac, color=plc, linewidth=1, ls='--', label=None)
 
 
-def plot_sensitivity_panel(fmt='png'):
+def plot_sensitivity_panel(fmt='png', dni=True):
     """
     This is the 3-panel plot that visualizes the sensitivity to LES domain and resolution
     :return:
     """
-
-    # load data
     csd_track_256_50 = make_csd('cs_tracking_256_50.npy')
     csd_track_256_100 = make_csd('cs_tracking_256_100.npy')
     csd_track_512_100 = make_csd('cs_tracking_512_100.npy')
@@ -52,10 +49,17 @@ def plot_sensitivity_panel(fmt='png'):
     csd_line_256_100 = make_csd('cs_lines_256_100.npy')
     csd_line_512_100 = make_csd('cs_lines_512_100.npy')
 
-    csd_point_bsrn = make_csd('cs_point_bsrn.npy')
-    csd_point_256_50 = make_csd('cs_point_256_50.npy')
-    csd_point_256_100 = make_csd('cs_point_256_100.npy')
-    csd_point_512_100 = make_csd('cs_point_512_100.npy')
+    # load data
+    if dni:
+        csd_point_bsrn = make_csd('cs_point_bsrn_dni.npy')
+        csd_point_256_50 = make_csd('cs_point_256_50_dni.npy')
+        csd_point_256_100 = make_csd('cs_point_256_100_dni.npy')
+        csd_point_512_100 = make_csd('cs_point_512_100_dni.npy')
+    else:
+        csd_point_bsrn = make_csd('cs_point_bsrn.npy')
+        csd_point_256_50 = make_csd('cs_point_256_50.npy')
+        csd_point_256_100 = make_csd('cs_point_256_100.npy')
+        csd_point_512_100 = make_csd('cs_point_512_100.npy')
 
     fig, axes = plt.subplots(1, 3, figsize=gutils.get_image_size(ratio=0.4))
 
@@ -98,7 +102,7 @@ def plot_sensitivity_panel(fmt='png'):
     plt.close()
 
 
-def plot_main_panel(fmt='png'):
+def plot_main_panel(fmt='png', dni=True):
     """
     This figure is a two-panel visualisation of measurement technique based on LES and the circle model
     :return:
@@ -109,8 +113,12 @@ def plot_main_panel(fmt='png'):
     # load data for panel a
     csd_track_512_100 = make_csd('cs_tracking_512_100.npy')
     csd_line_512_100 = make_csd('cs_lines_512_100.npy')
-    csd_point_bsrn = make_csd('cs_point_bsrn.npy')
-    csd_point_512_100 = make_csd('cs_point_512_100.npy')
+    if dni:
+        csd_point_bsrn = make_csd('cs_point_bsrn_dni.npy')
+        csd_point_512_100 = make_csd('cs_point_512_100_dni.npy')
+    else:
+        csd_point_bsrn = make_csd('cs_point_bsrn.npy')
+        csd_point_512_100 = make_csd('cs_point_512_100.npy')
 
     # plot CSD from LES and obs
     axes[0].plot(bins, f(csd_point_bsrn), label='Shadow obs.', color='black', zorder=1)
@@ -159,111 +167,8 @@ def plot_main_panel(fmt='png'):
     plt.close()
 
 
-@putils.timeit
-def random_number_custom(xmin, xmax, n=1000, alpha=-1.7, lda=None):
-    from numpy import random
-
-    if lda is None:
-        def p_pdf(x):
-            return x ** alpha
-    else:
-        def p_pdf(x):
-            return x ** alpha * np.exp(-x/lda)
-
-    # generate random sizes between xmin, xmax
-    xs = random.randint(xmin, xmax, size=n)
-
-    # calculate the pdf for each size, and draw random numbers
-    xs_prob = p_pdf(xs) / p_pdf(xmin)
-    # ps = random.random_sample(size=n)
-    ps = random.random_sample(size=n // 4)
-    ps = np.concatenate([ps] * 4)
-
-    # generate valid samples
-    samples = np.where(xs_prob > ps, xs, np.nan)
-    include = np.isfinite(samples)
-    print("Requested %i samples, %i found (%.2f%%)" % (n, int(np.sum(include)), int(np.sum(include)) / n * 100))
-    return samples[include], p_pdf
-
-
-def rodts_vs_bart(fmt='png', n=1e5, alpha=1.77, lda=80e3):
-    """
-    Visualize the difference in 1D vs. 2D between what Rodts et al. say compared to Bart's analysis
-
-    Aka, 1D vs. 2D number densities or contribution to cloud cover
-    :return:
-    """
-    import powerlaw
-
-    # set the x-space over which to visualize results
-    xmin, xmax = (1e2, 1e5)
-    x = np.logspace(np.log10(xmin), np.log10(xmax), 31)
-    x_center = (x[1:] + x[:-1]) / 2
-
-    # generate a power law distribution
-    csd = powerlaw.Power_Law(xmin=xmin, xmax=xmax, parameters=[alpha])
-    # csd = powerlaw.Truncated_Power_Law(xmin=xmin, xmax=xmax, parameters=[1.7, 1/3.3e3])
-    samples = csd.generate_random(n=int(n))
-
-    # generate another custom one
-    samples_custom, dfunc = random_number_custom(xmin=xmin, xmax=xmax, n=int(n*5e2), alpha=-alpha, lda=lda)
-
-    # create a 3-panel figure
-    fig, axes = plt.subplots(1, 3, figsize=gutils.get_image_size(text_width=1.5, ratio=0.35))
-
-    # visualize size distribution
-    pdf_y, _ = np.histogram(samples, bins=x, density=True)
-    axes[0].plot(x_center, pdf_y, label='$\\alpha$ = %.2f' % alpha)
-
-    pdf_y_new, _ = np.histogram(samples_custom, bins=x, density=True)
-    axes[0].plot(x_center, pdf_y_new, label='$\\alpha$ = %.2f, $\\lambda$ = %.1f km' % (alpha, lda/1e3))
-
-    # visualize diameter to cloud cover contribution based on circle model
-    circle_areas = np.pi * (x_center / 2) ** 2
-    cc_contrib = circle_areas / circle_areas.sum()
-    axes[1].plot(x_center, cc_contrib * 100, color='slategray')
-
-    # cloud cover distribution
-    pdf_y_cc = pdf_y * cc_contrib
-    pdf_y_cc_new = pdf_y_new * cc_contrib
-    pdf_y_an = dfunc(x_center)
-    pdf_y_an_cc = pdf_y_an / np.sum(pdf_y_an * np.diff(x)) * cc_contrib
-
-    axes[2].plot(x_center, pdf_y_cc, color='tab:blue', label='$x^{\\alpha}$')
-    axes[2].plot(x_center, pdf_y_cc_new, color='tab:orange', label='$x^{\\alpha}$e$^{-x\\lambda}$')
-    axes[2].plot(x_center, pdf_y_an_cc, color='tab:orange', ls='--', label='$x^{\\alpha}$e$^{-x\\lambda}$ (al)')
-
-    # plot layout
-    axes[0].text(0.5, 1.08, 'Number density 1D', ha='center', va='bottom', transform=axes[0].transAxes)
-    axes[1].text(0.5, 1.08, 'Contribution to cloud cover', ha='center', va='bottom', transform=axes[1].transAxes)
-    axes[2].text(0.5, 1.08, 'Cloud cover density 1D', ha='center', va='bottom', transform=axes[2].transAxes)
-
-    axes[0].set_ylabel('m$^{-1}$')
-    axes[1].set_ylabel('%')
-    axes[2].set_ylabel('a.u.')
-
-    axes[0].legend()
-    axes[2].legend()
-
-    for ax, label in zip(axes, 'abc'):
-        ax.set_yscale('log')
-        ax.set_xscale('log')
-        ax.set_xlabel('chord length, diameter (m)')
-        ax.set_xticks(np.logspace(np.log10(xmin), np.log10(xmax), int(np.log10(xmax/xmin))+1))
-        ax.set_xlim(xmin, xmax)
-        ax.text(0., 1.01, '$\\bf{%s}$)' % label, transform=ax.transAxes, ha='left', va='bottom')
-
-    # export and close
-    plt.tight_layout()
-    plt.savefig(os.path.join(settings.fdir_img_paper2, 'rodts_vs_bart_a%.2f.%s' % (alpha, fmt)), dpi=300,
-                bbox_inches='tight')
-    plt.close()
-
-
 if __name__ == "__main__":
     fmt_ = 'pdf'
 
-    # plot_sensitivity_panel(fmt=fmt_)
+    plot_sensitivity_panel(fmt=fmt_)
     # plot_main_panel(fmt=fmt_)
-    rodts_vs_bart(fmt=fmt_, n=1e5, alpha=2.7)
-    # random_number_custom(xmin=10, xmax=1000, n=int(5e7))

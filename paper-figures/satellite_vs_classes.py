@@ -22,7 +22,7 @@ def load_cloudclass_climatology(density=True, radius=5):
     :return:
     """
     # file dir and name settings - run the prepare_cloudclass_climatology in segment_test_figures
-    fdir = '../scripts/conditional_stats/output/'
+    fdir = '../scripts/event_stats/output/'
     fname = 'msgcpp_class_climate_reference_%s_r%i.npy' % ('density' if density else 'counts', radius)
 
     # cloud class bins x-axis edges

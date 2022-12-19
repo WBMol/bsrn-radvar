@@ -244,76 +244,6 @@ def power_law_sense_sea(variable='shadow', cth_threshold=None, fmt='png', sample
     plt.close()
 
 
-def power_law_test_sensor_speed(variable='shadow', fmt='png', sample_interval=1):
-    """
-    Fitting power law to distribution data using the python package. This tests on all data, as
-    well as summer and winter subsets. This is the main fitting function, additional sensitivity is
-    done separately.
-
-    :param fmt: png
-    :param str variable: which variable to load (shadow  or cloud enh)
-    :param int sample_interval: sample interval to take (1 = all, 10 = every 10th sample)
-    :return:
-    """
-    # plotting and fitting parameters
-    colors = ['black', 'tab:blue', 'tab:red']
-    winds = ['all', 'low', 'high']
-    xmaxs = [342e3] * 3
-    xmins = [100] * 3
-
-    # create a figure in advance
-    fig, ax = plt.subplots(1, 1, figsize=gutils.get_image_size(ratio=0.8))
-
-    # load data
-    segments = prepare_distribution_data(variable, cth_threshold=None, season='all')
-
-    # prepare data by filtering a subset of segments
-    ss = segments.where((segments.dir_min <= 120), drop=False)
-    # ss = ss.where((segments.duration >= 60), drop=False)
-    ss = ss.dropna(dim='segment')
-    ss['size'] = ss['duration'] * ss['u200']
-
-    for i in range(len(winds)):
-        if winds[i] == 'all':
-            ss_ = ss
-            # ss = ss.where(ss.size > 1)
-            # ss = ss.dropna(dim='segment')
-        elif winds[i] == 'low':
-            ss_ = ss.where(ss.u200 < 4)
-        elif winds[i] == 'high':
-            ss_ = ss.where(ss.u200 > 10)
-        else:
-            return
-
-        ss_ = ss_.dropna(dim='segment')
-
-        print('prepared data, fitting power law')
-        fit = powerlaw.Fit(ss_['size'][::sample_interval], xmin=xmins[i], xmax=xmaxs[i])
-        print(winds[i], fit.xmin, fit.data.shape, fit.truncated_power_law.alpha, fit.sigma)
-
-        # visualize fit
-        fit.plot_pdf(color=colors[i], zorder=5, label=winds[i], linewidth=2, alpha=0.4, ax=ax)
-        fit.truncated_power_law.plot_pdf(ax=ax, ls='--', color=colors[i], label='fit')
-        ax.text(.98 - 0.0 * i, .98 - 0.08 * i, '$\\alpha$ = %.3f\n$\\lambda^{-1}$ = %.1f km' %
-                (fit.truncated_power_law.alpha, 1e-3 / fit.truncated_power_law.parameter2),
-                transform=ax.transAxes, ha='right', va='top', color=colors[i])
-        # break
-
-    # plot layout
-    ax.legend(ncol=6, bbox_to_anchor=(0.5, 1.03), loc='center', frameon=False, handlelength=1.5,
-              handletextpad=0.5, columnspacing=1)
-    ax.set_xlabel('Shadow size (m)')
-    ax.set_xlim(min(xmins), max(xmaxs))
-    ax.set_ylim(1e-9, 1e-2)
-    ax.set_ylabel('PDF (m$^{-1}$)')
-
-    # export and close
-    plt.tight_layout()
-    plt.savefig(os.path.join(settings.fdir_img_paper1, 'power_law_test_sensor_speed.%s' % fmt), bbox_inches='tight',
-                dpi=120)
-    plt.close()
-
-
 def calculate_shadow_size(cloud_size, transparent_edge_size=45):
     """
     Convert cloud size to shadow size based on a model that includes some kind of size of the cloud edge size
@@ -472,16 +402,8 @@ def simulate_cloud_and_shadows(xmin=10, n=1e5, cache=True, add_uncertainty=False
     plt.close()
 
 
-def cloud_chord_to_projection(x, y=1e3, alpha=45):
-    alpha = np.deg2rad(alpha)
-    h = np.sin(alpha) * x + np.cos(alpha) * y
-    l = np.sin(np.pi / 2 - alpha) * h + np.cos(np.pi / 2 - alpha) * h
-    return l
-
-
 if __name__ == "__main__":
-    # power_law_sense_seasonal(fmt='png', sample_interval=1, guess_xmin=False)
-    # power_law_sense_y2y(fmt='png', sample_interval=1)
-    # power_law_sense_sea(fmt='png', sample_interval=1)
-    # power_law_test_sensor_speed(fmt='png', sample_interval=2)
+    power_law_sense_seasonal(fmt='png', sample_interval=1, guess_xmin=False)
+    power_law_sense_y2y(fmt='png', sample_interval=1)
+    power_law_sense_sea(fmt='png', sample_interval=1)
     simulate_cloud_and_shadows(xmin=10, n=1e7, cache=False, add_uncertainty=False, lce=25)

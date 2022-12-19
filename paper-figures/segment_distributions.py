@@ -11,8 +11,6 @@ from general import utils as gutils
 import settings
 
 mpl.use('Agg')
-# mpl.rcParams['text.latex.preamble'] = r'\usepackage{sansmath} \sansmath'
-# rc('text', usetex=True)
 rc('font', size=settings.fontsize)
 
 plt.style.use(gsettings.fpath_mplstyle)
