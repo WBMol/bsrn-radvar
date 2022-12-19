@@ -19,7 +19,6 @@ from utils import test_cases
 
 matplotlib.use('Agg')
 plt.style.use(gsettings.fpath_mplstyle)
-rc('font', size=8)
 
 
 def plot_classification(data, dt, msgcpp=None, nubi=None, plot_range='auto', res='1min', tmp_dir=None,
@@ -34,6 +33,8 @@ def plot_classification(data, dt, msgcpp=None, nubi=None, plot_range='auto', res
     :param str, tuple plot_range: 'auto' or a tuple (hour_start, hour_stop)
     :param str res: dataset resolution (1min or 1sec)
     :param tmp_dir: optional temporary export dir used for exporting subsets for validation
+    :param bool nubi_detail: whether to plot detailed nubiscope data or the simple version
+    :param add_wx: whether to visualize the weather classifications or not
     :return:
     """
     # create figure
@@ -93,9 +94,7 @@ def plot_classification(data, dt, msgcpp=None, nubi=None, plot_range='auto', res
     le_g2 = le[2:]
 
     props = dict(handletextpad=0.5, frameon=False, title_fontproperties=dict(weight='bold'), labelspacing=0.25)
-    la_1 = ax1.legend(handles=le_g2, loc='upper left', bbox_to_anchor=(1., 1.02
-                                                                       ), **props, title='Classifications',
-                      ncol=1)
+    la_1 = ax1.legend(handles=le_g2, loc='upper left', bbox_to_anchor=(1., 1.04), **props, title='Irradiance')
     las = [la_1]
 
     # group 1 (weather classes)
@@ -264,6 +263,7 @@ def plot_classification(data, dt, msgcpp=None, nubi=None, plot_range='auto', res
 def visualise_range(dts, res='1sec', plot_range='auto', add_msg=False, add_nubi=False, tmp_dir=None, nubi_detail=False,
                     add_wx=True):
     """
+    Batch generate time series classification quicklooks for a whole range of datetimes
 
     :param list dts: range of dates to process
     :param str res: source resolution of irradiance data
@@ -309,15 +309,29 @@ def visualise_test_set(case_set, nubi_detail=True):
                     nubi_detail=nubi_detail)
 
 
+def visualize_publication_set():
+    dts = {
+        'c1': (datetime(2016, 8, 15), (11, 12.5)),
+        'c2': (datetime(2015, 4, 18), (4, 19)),
+        'c3': (datetime(2015, 4, 3), (5, 18))
+    }
+    for dt, prange in dts.values():
+        visualise_range([dt], res='1sec', plot_range=prange, add_msg=True, add_nubi=True, nubi_detail=False, add_wx=True,
+                        tmp_dir=fdir_paper)
+
+
 if __name__ == "__main__":
-    fmt = 'pdf'
-    # generate or hardcode a list of datetimes to plot
-    # dts = gutils.generate_dt_range(datetime(2018, 8, 1), datetime(2020, 8, 5), delta_dt=timedelta(days=1))
-    dts = [datetime(2015, 4, 23)]
-    # visualise_range(dts, res='1sec', plot_range='auto', add_msg=True, add_nubi=True, nubi_detail=False, add_wx=False)
-    visualise_range(dts, res='1sec', plot_range=(9, 15), add_msg=True, add_nubi=True, nubi_detail=False, add_wx=False)
+    # main setting
+    paper_dir = True
 
+    # automatic conditional settings
+    fdir_paper = '../../paper-figures/images/paper_1'
+    rc('font', size=9 if paper_dir else 8)
+    fmt = 'pdf' if paper_dir else 'png'
+    fdir_img = fdir_paper if paper_dir else settings.fdir_img
 
+    # calling of plot scrips
+    dts = gutils.generate_dt_range(datetime(2014, 1, 1), datetime(2016, 12, 31), delta_dt=timedelta(days=1))
+
+    # visualise_range(dts, res='1sec', plot_range='auto', add_msg=True, add_nubi=True, nubi_detail=True, add_wx=True)
     # visualise_test_set(case_set='cs_to_oc')
-
-

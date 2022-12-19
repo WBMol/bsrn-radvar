@@ -483,13 +483,13 @@ def batch_run_all_available(res='1min', debug=False):
 
 if __name__ == "__main__":
     # datetime to process
-    # dt = datetime(2019, 7, 6)
+    dt = datetime(2016, 8, 15)
 
     # process data
     # run_classification(date=dt, debug=True, res='1sec')
 
     # batch_run_range(datetime(2011, 1, 1), datetime(2020, 1, 1), res='1sec')
-    batch_run_range(datetime(2018, 8, 1), datetime(2018, 8, 6), res='1sec')
+    batch_run_range(datetime(2020, 1, 1), datetime(2021, 1, 1), res='1sec')
     # batch_run_range(dts=test_cases['clearsky'], res='1sec')
 
     # batch_run_all_available()
