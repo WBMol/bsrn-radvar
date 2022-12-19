@@ -183,8 +183,8 @@ def analyse_segments(data, segments, class_index, class_name, return_format='xar
             stats['ghi_mean_rel'].append(ghi.mean() / ghi_cs.mean())
             stats['dif_wrt_cs'].append(subset.dif.mean() / ghi_cs.mean())
             stats['dif_wrt_ghi'].append((subset.dif.values / ghi).mean())
-            stats['solar_angle'].append(subset.solar_angle.mean())
-            stats['dir_min'].append(subset.dir.min())
+            stats['solar_angle'].append(subset.solar_elev.mean())
+            stats['dir_min'].append(subset.dni.min())
             stats['class_g1'].append(np.argmax(np.bincount(subset.classes_group_1)))
             stats['u200'].append(subset_u200.mean())
             stats['aod'].append(data_mcc.aod.mean())
@@ -284,9 +284,9 @@ def batch_run_segment_analyzer(dts, class_name, class_group, label='default', re
 
 
 if __name__ == "__main__":
-    dts = gutils.generate_dt_range(datetime(2020, 1, 1), datetime(2020, 2, 1), delta_dt=timedelta(days=1))
+    dts = gutils.generate_dt_range(datetime(2011, 2, 18), datetime(2021, 1, 1), delta_dt=timedelta(days=1))
     # dts = [datetime(2015, 4, 23)]
 
-    batch_run_segment_analyzer(dts, class_name='cloud-enh.', class_group='classes_group_2', label='all', res='1sec')
-    # batch_run_segment_analyzer(dts, class_name='shadow', class_group='classes_group_2', label='all', res='1sec')
+    # batch_run_segment_analyzer(dts, class_name='cloud-enh.', class_group='classes_group_2', label='all', res='1sec')
+    batch_run_segment_analyzer(dts, class_name='shadow', class_group='classes_group_2', label='all', res='1sec')
     # batch_run_segment_analyzer(dts, class_name='variable', class_group='classes_group_1', label='all', res='1sec')

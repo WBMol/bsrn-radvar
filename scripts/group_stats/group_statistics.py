@@ -172,8 +172,8 @@ attrs = {
     's_ghi_cs': dict(long_name='Sum of clear-sky global horizontal irradiance', units='J/m2'),
     's_dif': dict(long_name='Sum of diffuse irradiance', units='J/m2'),
     's_dir': dict(long_name='Sum of short wave beam irradiance', units='J/m2'),
-    's_dni_gmd': dict(long_name='Sum of short wave direct normal (ghi-dif) irradiance', units='J/m2'),
-    's_dni_sac': dict(long_name='Sum of short wave direct normal (solar-angle corrected) irradiance', units='J/m2'),
+    's_dhi_gmd': dict(long_name='Sum of short wave direct horizontal (ghi-dif) irradiance', units='J/m2'),
+    's_dhi_sac': dict(long_name='Sum of short wave direct horizontal (solar-angle corrected) irradiance', units='J/m2'),
     's_lwd': dict(long_name='Sum of long wave down', units='J/m2'),
     's_lwd_day': dict(long_name='Sum of long wave down during daytime', units='J/m2'),
 
@@ -256,28 +256,28 @@ def group_data_into_stats(dates, group_size='daily', source_data='bsrn', source_
                 data = base_data.sel(time_rad=slicer, time_mcc=slicer, time_class=slicer)
 
             # aggregate stats
-            results['n_possea'].append(np.sum(data.solar_angle > 0))
-            results['m_sea'].append(np.mean(data.solar_angle))
+            results['n_possea'].append(np.sum(data.solar_elev > 0))
+            results['m_sea'].append(np.mean(data.solar_elev))
             results['sag_ghi'].append(data.ghi.reduce(absolute_gradient_sum))
-            results['sag_dir'].append(data.dir.reduce(absolute_gradient_sum))
+            results['sag_dir'].append(data.dni.reduce(absolute_gradient_sum))
             results['s_ghi'].append(data.ghi.reduce(integrate, floor=0.))
             results['s_dif'].append(data.dif.reduce(integrate, floor=0.))
-            results['s_dir'].append(integrate(data.dir.where((data.solar_angle > 0) & (data.dir > 2))))
-            results['s_dni_gmd'].append(data.dni_gmd.reduce(integrate))
-            results['s_dni_sac'].append(integrate(data.dni_sac.where((data.solar_angle > 0) & (data.dir > 2))))
+            results['s_dir'].append(integrate(data.dni.where((data.solar_elev > 0) & (data.dni > 2))))
+            results['s_dhi_gmd'].append(data.dhi_gmd.reduce(integrate))
+            results['s_dhi_sac'].append(integrate(data.dhi_sac.where((data.solar_elev > 0) & (data.dni > 2))))
             results['s_ghi_cs'].append(data.ghi_cs.reduce(integrate))
             results['s_lwd'].append(data.lwd.reduce(integrate))
-            results['s_lwd_day'].append(integrate(data.lwd.where(data.solar_angle > 0)))
+            results['s_lwd_day'].append(integrate(data.lwd.where(data.solar_elev > 0)))
 
             # indices
             results['vi_ghi'].append(variability_index(data.ghi, data.ghi_cs))
             results['vi_dif'].append(variability_index(data.dif, data.dif_cs))
-            results['cmf'].append(cloud_modification_factor(data.ghi, data.ghi_cs, data.solar_angle))
+            results['cmf'].append(cloud_modification_factor(data.ghi, data.ghi_cs, data.solar_elev))
 
             # classification stats
             if 'classes_group_1' in data:
                 results['n_residual_g1'].append(np.sum(data.classes_group_1 == 0))
-                results['n_na_g1'].append(np.sum((data.classes_group_1.values == 1) & (data.solar_angle.values > 0)))
+                results['n_na_g1'].append(np.sum((data.classes_group_1.values == 1) & (data.solar_elev.values > 0)))
                 results['n_clearsky'].append(np.sum(data.classes_group_1 == 2))
                 results['n_overcast'].append(np.sum(data.classes_group_1 == 3))
                 results['n_variable'].append(np.sum(data.classes_group_1 == 4))
@@ -286,7 +286,7 @@ def group_data_into_stats(dates, group_size='daily', source_data='bsrn', source_
 
             if 'classes_group_2' in data and not skip_classes:
                 results['n_residual_g2'].append(np.sum(data.classes_group_2 == 0))
-                results['n_na_g2'].append(np.sum((data.classes_group_2.values == 1) & (data.solar_angle.values > 0)))
+                results['n_na_g2'].append(np.sum((data.classes_group_2.values == 1) & (data.solar_elev.values > 0)))
                 results['n_shadow'].append(np.sum(data.classes_group_2 == 2))
                 results['n_sunshine'].append(np.sum(data.classes_group_2 == 3))
                 results['n_ce'].append(np.sum(data.classes_group_2 == 4))
@@ -295,11 +295,11 @@ def group_data_into_stats(dates, group_size='daily', source_data='bsrn', source_
 
             # misc
             results['n'].append(len(data.time_rad))
-            results['fr_ghi'].append(get_availability_fraction(data.ghi, mask=data.solar_angle > 0.))
-            results['fr_dir'].append(get_availability_fraction(data.dir, mask=data.solar_angle > 0.))
-            results['fr_dif'].append(get_availability_fraction(data.dif, mask=data.solar_angle > 0.))
-            results['fr_all'].append(get_availability_fraction(data.ghi + data.dir + data.dif,
-                                                               mask=data.solar_angle > 0.))
+            results['fr_ghi'].append(get_availability_fraction(data.ghi, mask=data.solar_elev > 0.))
+            results['fr_dir'].append(get_availability_fraction(data.dni, mask=data.solar_elev > 0.))
+            results['fr_dif'].append(get_availability_fraction(data.dif, mask=data.solar_elev > 0.))
+            results['fr_all'].append(get_availability_fraction(data.ghi + data.dni + data.dif,
+                                                               mask=data.solar_elev > 0.))
 
     # create a dataset for results
     xr_arrays = {}
@@ -338,7 +338,7 @@ if __name__ == "__main__":
     dts = []
     # for year in range(2006, 2020):
     #     dts += gutils.generate_dt_range(datetime(year, 1, 1), datetime(year+1, 1, 1), delta_dt=timedelta(days=1))
-    dts += gutils.generate_dt_range(datetime(2011, 1, 1), datetime(2020, 1, 1), delta_dt=timedelta(days=1))
+    dts += gutils.generate_dt_range(datetime(2011, 1, 1), datetime(2021, 1, 1), delta_dt=timedelta(days=1))
     # dts += gutils.generate_dt_range(datetime(2018, 8, 1), datetime(2018, 9, 1), delta_dt=timedelta(days=1))
 
     group_data_into_stats(dts, group_size='daily', source_data='bsrn', source_res='1sec')
