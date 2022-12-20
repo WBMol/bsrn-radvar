@@ -221,13 +221,19 @@ def run_statistical_validation(dates, res='1sec', reference='msgcpp'):
         fpath_ref = gutils.generate_processed_fpath(dt, which=reference)
 
         if os.path.isfile(fpath_bsrn) & os.path.isfile(fpath_ref):
-            data = gutils.load_timeseries_data(fpath_bsrn)['classes_group_1']
-            data_ref = xarray.open_dataset(fpath_ref)
+            try:
+                data = gutils.load_timeseries_data(fpath_bsrn)['classes_group_1']
+                data_ref = xarray.open_dataset(fpath_ref)
 
-            result = {}
-            for variable in ['clearsky', 'overcast']:
-                result[variable] = verify_classification(variable, data, data_ref, reference=reference)
-            results.append(result)
+                result = {}
+                for variable in ['clearsky', 'overcast']:
+                    result[variable] = verify_classification(variable, data, data_ref, reference=reference)
+                results.append(result)
+
+            except KeyError as e:
+                print('Failed to load classification data for %s (%s)' % (dt, e))
+                result = {i: 0 for i in ['tp', 'fp', 'fn', 'tn', 'n']}
+                results.append({i: result for i in ['clearsky', 'overcast']})
         else:
             print("Input files missing for date: %s" % dt)
             result = {i: 0 for i in ['tp', 'fp', 'fn', 'tn', 'n']}
