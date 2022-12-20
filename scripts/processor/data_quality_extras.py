@@ -60,7 +60,11 @@ def compare_quality_flags(dt_start, dt_stop):
     for (ts, _) in day_ranges:
         # create fpath to raw monthly file
         fdir_in = settings.fdir_out.format(res='1sec', y=ts.year, m=ts.month)
-        data = xarray.open_dataset(os.path.join(fdir_in, ts.strftime('%Y%m%d.nc')))
+        try:
+            data = xarray.open_dataset(os.path.join(fdir_in, ts.strftime('%Y%m%d.nc')))
+        except FileNotFoundError as e:
+            print("File missing, continuing with next (%s)" % e)
+            continue
         data = data[[v1, v2]].where(data.solar_elev > 0).dropna(dim='time_rad')
 
         pct_agree = (data[v1] == data[v2]).mean().values * 100
