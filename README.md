@@ -1,6 +1,9 @@
 # Radiation Time Series Processing
 
-This repo is a collection of tools to do radiation time series processing, classification and analyses.
+This repository is a collection of tools to process 1 Hz BSRN solar irradiance time series, classification and analyses.
+This is the codebase used to produce the datasets published at Zenodo:
+- [Part 1: pure measurements](https://doi.org/10.5281/zenodo.7093163)
+- [Part 2: complementary data, statistics, classification, etc](https://doi.org/10.5281/zenodo.7092057)
 
 ## Structure
 
